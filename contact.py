@@ -123,6 +123,12 @@ class AddressBook:
         name = input("Введіть ім'я контакту для редагування: ")
         if name in self.contacts:
             print(f"Редагуємо контакт {name}.")
+
+            new_name = input("Нове ім'я (залиште порожнім для без змін): ")
+            if new_name:
+                self.contacts[new_name] = self.contacts.pop(name)
+                name = new_name
+
             phones = self.contacts[name].get("phones", [])
             while True:
                 phone = input("Введіть новий телефон (або Enter для завершення): ")
