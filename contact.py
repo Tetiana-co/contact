@@ -12,51 +12,49 @@ class AddressBook:
         if not name:
             print("Ім'я не може бути порожнім!")
             return
-        
+
         phones = []
-        
         while True:
             phone = input("Введіть телефон (формат (123) 456-7890 або 1234567890) або натисніть Enter, щоб завершити: ")
             if phone == "":
                 break
-            
-            # Перевірка формату телефону
             if not self.is_valid_phone(phone):
                 print("Некоректний формат телефону. Спробуйте ще раз.")
                 continue
-            
             phones.append(phone)
-        
+
         email = input("Введіть email: ")
         if not self.is_valid_email(email):
             print("Некоректний формат email. Спробуйте ще раз.")
             return
-        
+
         birthday = input("Введіть день народження (формат: ДД.ММ.РРРР): ")
         if not self.is_valid_birthday(birthday):
             print("Некоректний формат дня народження. Спробуйте ще раз.")
             return
-        
+
         address = input("Введіть адресу: ")
         if not address:
             print("Адреса не може бути порожньою!")
             return
-        
-        self.contacts[name] = {"phones": phones, "email": email, "birthday": birthday, "address": address}
+
+        self.contacts[name] = {
+            "phones": phones,
+            "email": email,
+            "birthday": birthday,
+            "address": address
+        }
         print("Контакт додано!")
 
     def is_valid_phone(self, phone):
-        """Перевірка формату телефону (формат: (123) 456-7890 або 1234567890)"""
         phone_regex = r'^\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}$'
         return bool(re.match(phone_regex, phone))
 
     def is_valid_email(self, email):
-        """Перевірка формату email"""
         email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
         return bool(re.match(email_regex, email))
 
     def is_valid_birthday(self, birthday):
-        """Перевірка формату дня народження (ДД.ММ.РРРР)"""
         try:
             datetime.strptime(birthday, "%d.%m.%Y")
             return True
@@ -75,21 +73,21 @@ class AddressBook:
         if self.contacts:
             print("Список контактів:")
             for name, data in self.contacts.items():
-                # Перевіряємо, чи є ключ 'phones', інакше використовуємо порожній список
-                phones = ", ".join(data.get("phones", []))  # Використовуємо get(), щоб уникнути помилки KeyError
-                print(f"{name}: {phones}")
+                phones = ", ".join(data.get("phones", []))
+                email = data.get("email", "")
+                birthday = data.get("birthday", "")
+                address = data.get("address", "")
+                print(f"{name}: Телефон: {phones}, Email: {email}, День народження: {birthday}, Адреса: {address}")
         else:
             print("Адресна книга пуста.")
 
     def save_data(self, filename="addressbook.pkl"):
-        """Зберігає стан адресної книги у файл"""
         with open(filename, "wb") as f:
             pickle.dump(self, f)
         print("Дані успішно збережено!")
 
     @staticmethod
     def load_data(filename="addressbook.pkl"):
-        """Завантажує дані з файлу або створює нову книгу"""
         if Path(filename).exists():
             with open(filename, "rb") as f:
                 return pickle.load(f)
@@ -98,17 +96,26 @@ class AddressBook:
             return AddressBook()
 
     def search_contact(self):
-        search_term = input("Введіть ім'я або email для пошуку: ").lower()
+        search_term = input("Введіть ім'я, email, адресу, день народження або номер телефону для пошуку: ").lower()
         found_contacts = []
         for name, data in self.contacts.items():
-            if search_term in name.lower() or search_term in data['email'].lower():
+            if (
+                search_term in name.lower()
+                or search_term in data.get("email", "").lower()
+                or search_term in data.get("address", "").lower()
+                or search_term in data.get("birthday", "")
+                or any(search_term in phone for phone in data.get("phones", []))
+            ):
                 found_contacts.append((name, data))
-        
+
         if found_contacts:
             print("Знайдені контакти:")
             for name, data in found_contacts:
-                phones = ", ".join(data["phones"])  # Перетворюємо список телефонів в рядок
-                print(f"{name}: Телефон: {phones}, Email: {data['email']}, День народження: {data['birthday']}, Адреса: {data['address']}")
+                phones = ", ".join(data.get("phones", []))
+                email = data.get("email", "")
+                birthday = data.get("birthday", "")
+                address = data.get("address", "")
+                print(f"{name}: Телефон: {phones}, Email: {email}, День народження: {birthday}, Адреса: {address}")
         else:
             print("Контакти не знайдено.")
 
@@ -116,43 +123,42 @@ class AddressBook:
         name = input("Введіть ім'я контакту для редагування: ")
         if name in self.contacts:
             print(f"Редагуємо контакт {name}.")
-            phones = self.contacts[name]["phones"]
+            phones = self.contacts[name].get("phones", [])
             while True:
-                phone = input(f"Введіть новий телефон для {name} (залиште порожнім для без змін або натисніть Enter для завершення): ")
+                phone = input("Введіть новий телефон (або Enter для завершення): ")
                 if phone == "":
                     break
                 if not self.is_valid_phone(phone):
                     print("Некоректний формат телефону. Спробуйте ще раз.")
                     continue
-                phones.append(phone)  # Додаємо новий телефон до списку
-                
-            email = input(f"Введіть новий email для {name} (залиште порожнім для без змін): ")
-            birthday = input(f"Введіть новий день народження для {name} (залиште порожнім для без змін): ")
-            address = input(f"Введіть нову адресу для {name} (залиште порожнім для без змін): ")
-            
+                phones.append(phone)
+
+            email = input("Новий email (залиште порожнім для без змін): ")
+            birthday = input("Новий день народження (залиште порожнім для без змін): ")
+            address = input("Нова адреса (залиште порожнім для без змін): ")
+
             if email:
                 if not self.is_valid_email(email):
-                    print("Некоректний формат email. Спробуйте ще раз.")
+                    print("Некоректний формат email.")
                     return
                 self.contacts[name]["email"] = email
             if birthday:
                 if not self.is_valid_birthday(birthday):
-                    print("Некоректний формат дня народження. Спробуйте ще раз.")
+                    print("Некоректний формат дня народження.")
                     return
                 self.contacts[name]["birthday"] = birthday
             if address:
                 self.contacts[name]["address"] = address
-            
+
+            self.contacts[name]["phones"] = phones
             print(f"Контакт {name} оновлено!")
         else:
-            print(f"Контакт {name} не знайдено!")
+            print("Контакт не знайдено!")
 
 def main():
-    # Завантажуємо дані при старті програми
     book = AddressBook.load_data()
-    
+
     try:
-        # Основний цикл роботи з адресною книгою
         while True:
             print("\n1. Додати контакт")
             print("2. Видалити контакт")
@@ -170,7 +176,7 @@ def main():
             elif command == "3":
                 book.show_contacts()
             elif command == "4":
-                book.save_data()  # Зберігаємо дані
+                book.save_data()
             elif command == "5":
                 book.search_contact()
             elif command == "6":
@@ -180,7 +186,6 @@ def main():
             else:
                 print("Невірний вибір, спробуйте ще раз.")
     finally:
-        # Гарантоване збереження перед виходом
         book.save_data()
         print("Дані успішно збережено!")
 
